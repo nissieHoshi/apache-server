@@ -10,6 +10,12 @@ Vagrant.configure("2") do |config|
 
   config.vm.box = "centos/7"
 
+  config.vm.provider "virtualbox" do |vm|
+    # メモリを2048MBに設定
+    vm.customize ["modifyvm", :id, "--memory", "2048"]
+  end
+  
+  config.vm.network "forwarded_port", guest: 21, host: 2001, id:"ftp"
   config.vm.network "forwarded_port", guest: 22, host: 2222, id:"ssh"
   config.vm.network "forwarded_port", guest: 80, host: 8080, id:"http"
 
@@ -35,5 +41,13 @@ Vagrant.configure("2") do |config|
     firewall-cmd --add-service=http --permanent
     systemctl reload firewalld
     systemctl start httpd
+    printf "expose_php off\npost_max_size = 20M\nupload_max_filesize = 20M\ndate.timezone = "Asia/Tokyo"\nextension=php_mbstring.dll\nmbstring.language = Japanese\nmbstring.internal_encoding = UTF-8\nmbstring.http_input = UTF-8\nmbstring.http_output = pass\nmbstring.encoding_translation = On\nmbstring.detect_order = auto\nmbstring.substitute_character = none\nerror_reporting = E_ALL\ndisplay_error = On\n" >> /etc/php.ini
+    systemctl reload httpd
+    sed -i.bak s/\\[mariadb\\]/"[mariadb]\ncharacter-set-server=utf8mb4\ncollation-server=utf8mb4_unicode_ci"/ /etc/my.cnf.d/server.cnf
+    systemctl restart mariadb
+    yes | mysql_secure_installation
+    sed -i.bak s/SELINUX=enforcing/SELINUX=permissive/ /etc/selinux/config
+    setenforce 0
+    touch /var/www/html/index.html && echo '<h1>Hello, World!</h1>' > /var/www/html/index.html
   SHELL
 end
