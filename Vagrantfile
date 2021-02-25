@@ -23,7 +23,7 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder "./www", "/var/www/html", create: "true"
   
   config.vm.provision "shell", inline: <<-SHELL
-    yum update
+    yum update -y
     timedatectl set-timezone Asia/Tokyo
     yum install -y httpd httpd-tools httpd-devel httpd-manual
     systemctl enable httpd
@@ -40,13 +40,13 @@ Vagrant.configure("2") do |config|
     firewall-cmd --add-service=http --permanent
     systemctl reload firewalld
     systemctl start httpd
-    printf "expose_php off\npost_max_size = 20M\nupload_max_filesize = 20M\ndate.timezone = "Asia/Tokyo"\nextension=php_mbstring.dll\nmbstring.language = Japanese\nmbstring.internal_encoding = UTF-8\nmbstring.http_input = UTF-8\nmbstring.http_output = pass\nmbstring.encoding_translation = On\nmbstring.detect_order = auto\nmbstring.substitute_character = none\nerror_reporting = E_ALL\ndisplay_error = On\n" >> /etc/php.ini
+    printf "expose_php off\npost_max_size = 20M\nupload_max_filesize = 20M\ndate.timezone = "Asia/Tokyo"\nmbstring.language = Japanese\nmbstring.internal_encoding = UTF-8\nmbstring.http_input = UTF-8\nmbstring.http_output = pass\nmbstring.encoding_translation = On\nmbstring.detect_order = auto\nmbstring.substitute_character = none\nerror_reporting = E_ALL\ndisplay_error = On\n" >> /etc/php.ini
     systemctl reload httpd
     sed -i.bak s/\\[mariadb\\]/"[mariadb]\ncharacter-set-server=utf8mb4\ncollation-server=utf8mb4_unicode_ci"/ /etc/my.cnf.d/server.cnf
     systemctl restart mariadb
     yes | mysql_secure_installation
     sed -i.bak s/SELINUX=enforcing/SELINUX=permissive/ /etc/selinux/config
     setenforce 0
-    touch /var/www/html/index.html && echo '<h1>Hello, World!</h1>' > /var/www/html/index.html
+    touch /var/www/html/index.php && echo '<?php phpinfo() ?>' > /var/www/html/index.php
   SHELL
 end
